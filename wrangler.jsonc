@@ -1,0 +1,29 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "site-stats",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-06-14",
+
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "web_analytics",
+      "database_id": "f8d29b91-55b2-4919-8ff1-57b079571b85"
+    }
+  ],
+
+  "assets": {
+    "directory": "./front/dist"
+  }
+}
