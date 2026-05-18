@@ -1,12 +1,12 @@
 (function(){
 
   console.info(
-    'welcome to WebViso/yestool，author：YesTool，author url: https://webviso.yestool.org'
+    'welcome to WebViso/yestool，author：YesTool，author url: https://site-stats.dongyue.org'
   );
 
   setTimeout(function () {
     var addHeadStr = '<meta property="og:site_counter_author" content="yestool"></meta>'
-      + '<meta property="og:site_counter_author_url" content="https://webviso.yestool.org"></meta>';
+      + '<meta property="og:site_counter_author_url" content="https://site-stats.dongyue.org"></meta>';
     
     if (document.head){
       document.head.innerHTML += addHeadStr;
@@ -20,7 +20,7 @@
 
   const WebViso = {};
   WebViso.version = '0.0.0';
-  let BASE_API_PATH = 'https://webviso.yestool.org';
+  let BASE_API_PATH = 'https://site-stats.dongyue.org';
 
   WebViso.page_pv_id = "page_pv"; 
   WebViso.page_uv_id = "page_uv";
