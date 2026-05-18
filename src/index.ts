@@ -10,7 +10,7 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.get("/", (c) => c.text("Hello World-2023"));
+app.get("/", (c) => c.redirect("/test.html"));
 app.use('/api/*', cors());
 
 app.post('/api/visit', async (c) => {
