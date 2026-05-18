@@ -216,7 +216,10 @@
 
   window.copyCode = function(blockId, btn) {
     var block = document.getElementById(blockId);
-    var text = block.innerText || block.textContent;
+    var clone = block.cloneNode(true);
+    var copyBtn = clone.querySelector('.copy-btn');
+    if (copyBtn) copyBtn.remove();
+    var text = (clone.innerText || clone.textContent).trim();
     navigator.clipboard.writeText(text).then(function() {
       btn.textContent = '已复制';
       btn.classList.add('copied');
