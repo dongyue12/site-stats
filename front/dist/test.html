@@ -100,6 +100,54 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  .code-section {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-top: 16px;
+  }
+  .code-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #1e293b;
+  }
+  .code-block {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: "Fira Code", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+    white-space: pre;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .code-block .tag { color: #f472b6; }
+  .code-block .attr { color: #67e8f9; }
+  .code-block .val { color: #a5d6a7; }
+  .code-block .comment { color: #64748b; font-style: italic; }
+  .code-block .text { color: #e2e8f0; }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #334155;
+    color: #e2e8f0;
+    border: none;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .copy-btn:hover { background: #475569; }
+  .copy-btn.copied { background: #16a34a; }
 </style>
 </head>
 <body>
@@ -136,6 +184,17 @@
     <span class="dot"></span>
     <span id="statusText">检查中...</span>
   </div>
+
+  <div class="code-section">
+    <h3>集成代码</h3>
+    <div class="code-block" id="codeBlock1">
+<span class="comment">&lt;!-- 1. 在 &lt;/body&gt; 前引入追踪脚本 --&gt;</span><span class="tag">&lt;script</span> <span class="attr">defer</span> <span class="attr">src</span>=<span class="val">"https://site-stats.dongyue.org/index.min.js"</span> <span class="attr">data-base-url</span>=<span class="val">"https://site-stats.dongyue.org"</span><span class="tag">&gt;&lt;/script&gt;</span>
+    <button class="copy-btn" onclick="copyCode('codeBlock1', this)">复制</button></div>
+    <div class="code-block" id="codeBlock2">
+<span class="comment">&lt;!-- 2. 在页面中放置 PV/UV 显示元素 --&gt;</span><span class="tag">&lt;p&gt;</span><span class="text">访问人次:</span><span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="val">"page_pv"</span><span class="tag">&gt;&lt;/span&gt;&lt;/p&gt;</span>
+<span class="tag">&lt;p&gt;</span><span class="text">访问人数:</span><span class="tag">&lt;span</span> <span class="attr">id</span>=<span class="val">"page_uv"</span><span class="tag">&gt;&lt;/span&gt;&lt;/p&gt;</span>
+    <button class="copy-btn" onclick="copyCode('codeBlock2', this)">复制</button></div>
+  </div>
 </div>
 
 <script defer src="https://site-stats.dongyue.org/index.min.js" data-base-url="https://site-stats.dongyue.org"></script>
@@ -152,6 +211,21 @@
   var statusEl = document.getElementById('status');
   var statusTextEl = document.getElementById('statusText');
   var navBtns = document.querySelectorAll('.nav-btn');
+
+  window.copyCode = function(blockId, btn) {
+    var block = document.getElementById(blockId);
+    var text = block.innerText || block.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '已复制';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.textContent = '复制';
+        btn.classList.remove('copied');
+      }, 2000);
+    }).catch(function() {
+      btn.textContent = '失败';
+    });
+  };
 
   function getLocation(href) {
     var l = document.createElement('a');
