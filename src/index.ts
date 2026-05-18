@@ -10,7 +10,11 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-app.get("/", (c) => c.redirect("/test.html"));
+app.get("/", (c) => {
+  c.header('Cache-Control', 'public, max-age=3600');
+  return c.redirect("/test.html");
+});
+
 app.use('/api/*', cors());
 
 app.post('/api/visit', async (c) => {
@@ -46,10 +50,10 @@ app.post('/api/visit', async (c) => {
     const website  = await c.env.DB.prepare('select id, domain from t_website where domain = ?').bind(hostname).first();
     let websiteId: number;
     if (website){
+      websiteId = Number(website.id);
       await insert(c.env.DB,
         'insert into t_web_visitor (website_id, url_path, referrer_domain, referrer_path, visitor_ip) values(?, ?, ?, ?, ?)',
-        [website.id, url_path, referrer_domain, referrer_path, visitorIP]);
-      websiteId = Number(website.id);
+        [websiteId, url_path, referrer_domain, referrer_path, visitorIP]);
     } else{
       websiteId = await insertAndReturnId(c.env.DB, 'insert into t_website (name, domain) values(?,?)',[hostname.split(".").join("_"), hostname]);
       await insert(c.env.DB,
@@ -62,14 +66,26 @@ app.post('/api/visit', async (c) => {
         website_id: websiteId
       }));
     }
+
+    // 并行查询 PV 和 UV，减少等待时间
     const resData:{pv?: number, uv?: number} = {}
+    const queries: Promise<any>[] = [];
     if (pv){
-      const total = await c.env.DB.prepare('SELECT COUNT(*) AS total from t_web_visitor where website_id = ? and url_path = ?').bind(websiteId, url_path).first('total');
-      resData['pv'] = Number(total)
+      queries.push(
+        c.env.DB.prepare('SELECT COUNT(*) AS total from t_web_visitor where website_id = ? and url_path = ?')
+          .bind(websiteId, url_path).first('total')
+          .then(total => { resData['pv'] = Number(total); })
+      );
     }
     if (uv){
-      const total = await c.env.DB.prepare('SELECT COUNT(*) AS total from (select DISTINCT visitor_ip from t_web_visitor where website_id = ? and url_path = ?) t').bind(websiteId, url_path).first('total');
-      resData['uv'] = Number(total)
+      queries.push(
+        c.env.DB.prepare('SELECT COUNT(*) AS total from (select DISTINCT visitor_ip from t_web_visitor where website_id = ? and url_path = ?) t')
+          .bind(websiteId, url_path).first('total')
+          .then(total => { resData['uv'] = Number(total); })
+      );
+    }
+    if (queries.length > 0) {
+      await Promise.all(queries);
     }
 
     const elapsed = Date.now() - startTime;
@@ -83,6 +99,7 @@ app.post('/api/visit', async (c) => {
       elapsed_ms: elapsed
     }));
 
+    c.header('Cache-Control', 'no-store');
     return c.json({ret: "OK", data: resData});
   } catch (e) {
     const elapsed = Date.now() - startTime;
