@@ -2,7 +2,7 @@
 
 # Web Visitor Analytics Service Based on Cloudflare + Hono + D1
 
-[Demo Site](https://webviso.yestool.org/)
+> Original author: [yestool/analytics_with_cloudflare](https://github.com/yestool/analytics_with_cloudflare) · [Demo](https://webviso.yestool.org/)
 
 ---
 

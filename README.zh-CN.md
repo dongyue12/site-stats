@@ -2,7 +2,7 @@
 
 # 基于 Cloudflare + Hono + D1 的网页访客统计服务
 
-[参考演示站点](https://webviso.yestool.org/)
+> 原作者：[yestool/analytics_with_cloudflare](https://github.com/yestool/analytics_with_cloudflare) · [演示站点](https://webviso.yestool.org/)
 
 ---
 
