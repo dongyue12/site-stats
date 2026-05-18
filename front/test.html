@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Analytics 测试页</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f5f7fa;
+    color: #1e293b;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .container { max-width: 640px; width: 100%; }
+
+  .header { text-align: center; margin-bottom: 32px; }
+  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .header .subtitle { font-size: 13px; color: #64748b; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); }
+
+  .stat-card .number {
+    font-size: 48px;
+    font-weight: 700;
+    color: #3b82f6;
+  }
+  .stat-card .number.pop { animation: pop 0.3s ease; }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+  }
+
+  .stat-card .label { font-size: 14px; color: #64748b; margin-top: 4px; }
+
+  .nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 24px; }
+
+  .nav-btn {
+    padding: 8px 20px;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .nav-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+  .nav-btn.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+  .info-bar {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .info-bar span { color: #64748b; }
+  .info-bar code {
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #3b82f6;
+    word-break: break-all;
+  }
+
+  .status { display: flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: 500; }
+  .status.ok { background: #f0fdf4; color: #16a34a; }
+  .status.err { background: #fef2f2; color: #dc2626; }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Web Analytics 测试页</h1>
+    <p class="subtitle">服务地址: https://site-stats.dongyue.org</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="number" id="page_pv">--</div>
+      <div class="label">访问人次 (PV)</div>
+    </div>
+    <div class="stat-card">
+      <div class="number" id="page_uv">--</div>
+      <div class="label">访问人数 (UV)</div>
+    </div>
+  </div>
+
+  <nav class="nav" id="nav">
+    <button class="nav-btn active" data-hash="#home">首页</button>
+    <button class="nav-btn" data-hash="#about">关于</button>
+    <button class="nav-btn" data-hash="#products">产品</button>
+    <button class="nav-btn" data-hash="#contact">联系</button>
+  </nav>
+
+  <div class="info-bar">
+    <div>当前追踪: <code id="currentUrl">--</code></div>
+    <div>来源: <span id="referrerInfo">--</span></div>
+  </div>
+
+  <div class="status ok" id="status">
+    <span class="dot"></span>
+    <span id="statusText">检查中...</span>
+  </div>
+</div>
+</body>
+</html>
