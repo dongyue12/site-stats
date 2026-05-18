@@ -14,15 +14,28 @@ app.get("/", (c) => c.redirect("/test.html"));
 app.use('/api/*', cors());
 
 app.post('/api/visit', async (c) => {
+  const startTime = Date.now();
+  const visitorIP = c.req.header('CF-Connecting-IP') || 'unknown';
   const retObj = {ret: "ERROR", data: null, message: "Error, Internal Server Error"};
   try{
-    let visitorIP = c.req.header('CF-Connecting-IP')
     const body = await c.req.json()
     const hostname = body.hostname
     const url_path = body.url
     const referrer = body.referrer
     const pv = body.pv
     const uv = body.uv
+
+    console.log(JSON.stringify({
+      ts: new Date().toISOString(),
+      ip: visitorIP,
+      host: hostname,
+      path: url_path,
+      ref: referrer || '(direct)',
+      action: 'visit',
+      pv: !!pv,
+      uv: !!uv
+    }));
+
     let referrer_path = ''
     let referrer_domain = ''
     if (referrer&&checkUrl(referrer)){
@@ -33,15 +46,21 @@ app.post('/api/visit', async (c) => {
     const website  = await c.env.DB.prepare('select id, domain from t_website where domain = ?').bind(hostname).first();
     let websiteId: number;
     if (website){
-      await insert(c.env.DB, 
+      await insert(c.env.DB,
         'insert into t_web_visitor (website_id, url_path, referrer_domain, referrer_path, visitor_ip) values(?, ?, ?, ?, ?)',
         [website.id, url_path, referrer_domain, referrer_path, visitorIP]);
       websiteId = Number(website.id);
     } else{
       websiteId = await insertAndReturnId(c.env.DB, 'insert into t_website (name, domain) values(?,?)',[hostname.split(".").join("_"), hostname]);
-      await insert(c.env.DB, 
-        'insert into t_web_visitor (website_id, url_path, referrer_domain, referrer_path, visitor_ip) values(?, ?, ?, ?, ?)', 
+      await insert(c.env.DB,
+        'insert into t_web_visitor (website_id, url_path, referrer_domain, referrer_path, visitor_ip) values(?, ?, ?, ?, ?)',
         [websiteId, url_path, referrer_domain, referrer_path, visitorIP]);
+      console.log(JSON.stringify({
+        ts: new Date().toISOString(),
+        action: 'website_registered',
+        domain: hostname,
+        website_id: websiteId
+      }));
     }
     const resData:{pv?: number, uv?: number} = {}
     if (pv){
@@ -52,9 +71,28 @@ app.post('/api/visit', async (c) => {
       const total = await c.env.DB.prepare('SELECT COUNT(*) AS total from (select DISTINCT visitor_ip from t_web_visitor where website_id = ? and url_path = ?) t').bind(websiteId, url_path).first('total');
       resData['uv'] = Number(total)
     }
+
+    const elapsed = Date.now() - startTime;
+    console.log(JSON.stringify({
+      ts: new Date().toISOString(),
+      action: 'visit_done',
+      host: hostname,
+      path: url_path,
+      pv: resData.pv,
+      uv: resData.uv,
+      elapsed_ms: elapsed
+    }));
+
     return c.json({ret: "OK", data: resData});
   } catch (e) {
-    console.error(e);
+    const elapsed = Date.now() - startTime;
+    console.error(JSON.stringify({
+      ts: new Date().toISOString(),
+      action: 'error',
+      ip: visitorIP,
+      error: String(e),
+      elapsed_ms: elapsed
+    }));
     return c.json(retObj);
   }
 })
