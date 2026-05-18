@@ -28,13 +28,11 @@ analytics_with_cloudflare/
 │       ├── util.ts        # URL 解析工具
 │       └── dbutil.ts      # 数据库操作工具
 ├── front/
-│   ├── dist/              # 静态资源（Worker 托管）
-│   │   ├── index.js       # 追踪脚本（非压缩）
-│   │   ├── index.min.js   # 追踪脚本（压缩）
-│   │   └── test.html      # 测试页面
-│   └── test.html          # 测试页面源码
-├── wrangler.jsonc         # Wrangler 配置（优先）
-├── wrangler.toml          # Wrangler 配置（备用）
+│   └── dist/              # 静态资源（Worker 托管）
+│       ├── index.js       # 追踪脚本（非压缩）
+│       ├── index.min.js   # 追踪脚本（压缩）
+│       └── test.html      # 测试页面
+├── wrangler.jsonc         # Wrangler 配置
 ├── schema.sql             # D1 数据库表结构
 ├── package.json
 └── tsconfig.json

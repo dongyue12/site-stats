@@ -1,133 +1,286 @@
 [简体中文](./README.zh-CN.md) · **English**
 
-# Web Visitor Analytics Service Based on Cloudflare + Huno + D1
+# Web Visitor Analytics Service Based on Cloudflare + Hono + D1
 
 [Demo Site](https://webviso.yestool.org/)
 
+---
+
+## Table of Contents
+
+- [Project Structure](#project-structure)
+- [Deployment Steps](#deployment-steps)
+- [How to Use](#how-to-use)
+- [Test Page](#test-page)
+- [Viewing Logs](#viewing-logs)
+- [API Reference](#api-reference)
+- [Configuration Reference](#configuration-reference)
+
+---
+
+## Project Structure
+
+```
+analytics_with_cloudflare/
+├── src/
+│   ├── index.ts          # Worker entry point, Hono routes
+│   └── lib/
+│       ├── util.ts        # URL parsing utility
+│       └── dbutil.ts      # Database utility
+├── front/
+│   └── dist/              # Static assets (served by Worker)
+│       ├── index.js       # Tracking script (uncompressed)
+│       ├── index.min.js   # Tracking script (minified)
+│       └── test.html      # Test page
+├── wrangler.jsonc         # Wrangler configuration
+├── schema.sql             # D1 database schema
+├── package.json
+└── tsconfig.json
+```
+
+---
+
 ## Deployment Steps
 
-### Install Dependencies
+### 1. Install Dependencies
 
 ```bash
 npm install -g wrangler
-npm install hono
+npm install
 ```
 
-### Login
-
-Redirect to the Cloudflare web authorization page.
+### 2. Login to Cloudflare
 
 ```bash
 npx wrangler login
 ```
 
-### Create D1 Database: [web_analytics]
+Complete OAuth authorization in your browser.
 
-> The database name should be `web_analytics`, consistent with the name in `package.json`.
+### 3. Create D1 Database
 
 ```bash
 npx wrangler d1 create web_analytics
 ```
 
-After successful creation, it will display:
+Successful output:
 
 ```
 ✅ Successfully created DB web_analytics
 
 [[d1_databases]]
-binding = "DB" # available in your Worker on env.DB
+binding = "DB"
 database_name = "web_analytics"
-database_id = "<unique-ID-for-your-database>"
+database_id = "<unique-ID>"
 ```
 
-### Configure Worker and Bind D1 Database
+### 4. Configure wrangler.jsonc
 
-Write the `unique-ID-for-your-database` returned from the previous step into `wrangler.toml`.
+Fill in the `database_id` from the previous step into `wrangler.jsonc`:
 
-```toml
-name = "analytics_with_cloudflare"
-main = "src/index.ts"
-compatibility_date = "2024-06-14"
+```jsonc
+{
+  "name": "site-stats",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-06-14",
 
-[[d1_databases]]
-binding = "DB" # available in your Worker on env.DB
-database_name = "web_analytics"
-database_id = "<unique-ID-for-your-database>"
+  "observability": {
+    "logs": {
+      "enabled": true,
+      "persist": true,
+      "invocation_logs": true
+    }
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "web_analytics",
+      "database_id": "<unique-ID>"
+    }
+  ],
+
+  "assets": {
+    "directory": "./front/dist"
+  }
+}
 ```
 
-### Initialize the D1 Database Schema
+### 5. Initialize D1 Table Schema
 
 ```bash
 npm run initSql
 ```
 
-### Deploy
+### 6. Deploy
 
 ```bash
 npm run deploy
 ```
 
-After successful deployment, it will display:
+After deployment, visit `https://<name>.<your-subdomain>.workers.dev`.
 
-```
-> analytics_with_cloudflare@0.0.0 deploy
-> wrangler deploy
+### 7. Bind Custom Domain (Optional)
 
-Proxy environment variables detected. We'll use your proxy for fetch requests.
- ⛅️ wrangler 3.18.0
--------------------
-Your worker has access to the following bindings:
-- D1 Databases:
-  - DB: web_analytics (<unique-ID-for-your-database>)
-Total Upload: 50.28 KiB / gzip: 12.23 KiB
-Uploaded analytics_with_cloudflare (1.29 sec)
-Published analytics_with_cloudflare (4.03 sec)
-  https://analytics_with_cloudflare.xxxxx.workers.dev
-Current Deployment ID: xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-```
+Cloudflare Dashboard → Workers & Pages → Your Worker → Triggers → Custom Domains, add your domain.
+
+---
 
 ## How to Use
 
-> - `data-base-url` default value: `https://webviso.yestool.org`
-> - `data-page-pv-id` default value: `page_pv`
-> - `data-page-uv-id` default value: `page_uv`
+### Include the Tracking Script
 
-### 1. Include the Script
-
-Add the following `<script>...</script>` segment before the closing `</body>` tag in your HTML.
-
-- Using the online JS file:
-> With the defer attribute, the browser will execute these scripts after all content is loaded.
+Add the following before the `</body>` tag in your HTML:
 
 ```html
-<script defer src="//webviso.yestool.org/js/index.min.js"></script>
+<script defer src="https://<your-domain>/index.min.js" data-base-url="https://<your-domain>"></script>
 ```
 
-- Using a local JS file:
+> Replace `<your-domain>` with your Worker address. Do not add a trailing `/`.
+
+### Display Statistics
+
+Add these elements anywhere in your page:
 
 ```html
-<script src="/front/dist/index.min.js"></script>
+<p>Page Views: <span id="page_pv"></span></p>
+<p>Unique Visitors: <span id="page_uv"></span></p>
 ```
 
-- If you have deployed your backend, use your service address to send requests to your own service.
-> Change `your-url` to your worker address, like `https://analytics_with_cloudflare.workers.dev`, and ensure there is no trailing `/`.
+### Custom Element IDs
 
 ```html
-<script defer src="//webviso.yestool.org/js/index.min.js" data-base-url="your-url"></script>
+<script defer src="https://<your-domain>/index.min.js"
+  data-base-url="https://<your-domain>"
+  data-page-pv-id="my_pv"
+  data-page-uv-id="my_uv">
+</script>
 ```
 
-### 2. Display Data
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `data-base-url` | `https://webviso.yestool.org` | API service URL |
+| `data-page-pv-id` | `page_pv` | PV display element ID |
+| `data-page-uv-id` | `page_uv` | UV display element ID |
 
-- Add tags with the ID `page_pv` or `page_uv` to show `Page Views (pv)` or `Unique Visitors (uv)` respectively.
+---
 
-```html
-Page Views on this page:<span id="page_pv"></span>
+## Test Page
 
-Unique Visitors on this page:<span id="page_uv"></span>
+Visit `/test.html` after deployment. Features:
+
+- **Live PV/UV Display** — Card layout with pop animation on value change
+- **Multi-Page Simulation** — Switch between Home/About/Products/Contact via URL hash
+- **Connection Status** — Auto-detects API connectivity, green = OK, red = error
+- **Tracking Info** — Shows current tracking path and referrer
+- **Copyable Integration Code** — Syntax-highlighted code blocks with copy button
+
+---
+
+## Viewing Logs
+
+Stream Worker runtime logs in real-time with `wrangler tail`:
+
+```bash
+npx wrangler tail
 ```
 
-- You can edit the script parameters to adjust the tag IDs.
+Each log entry is structured JSON:
 
-```html
-<script defer src="//webviso.yestool.org/js/index.min.js" data-base-url="your-url" data-page-pv-id="page_pv" data-page-uv-id="page_uv"></script>
+```json
+// Incoming request
+{"ts":"2026-05-18T...","ip":"...","host":"example.com","path":"/page","ref":"(direct)","action":"visit","pv":true,"uv":true}
+
+// New website registered
+{"ts":"2026-05-18T...","action":"website_registered","domain":"example.com","website_id":1}
+
+// Request completed
+{"ts":"2026-05-18T...","action":"visit_done","host":"example.com","path":"/page","pv":42,"uv":15,"elapsed_ms":12}
+
+// Error
+{"ts":"2026-05-18T...","action":"error","ip":"...","error":"...","elapsed_ms":5}
+```
+
+---
+
+## API Reference
+
+### POST /api/visit
+
+Records a page visit and returns statistics.
+
+**Request Body:**
+
+```json
+{
+  "url": "/page-path",
+  "hostname": "example.com",
+  "referrer": "https://google.com/search",
+  "pv": true,
+  "uv": true
+}
+```
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `url` | string | Page path |
+| `hostname` | string | Website domain |
+| `referrer` | string | Referrer URL, empty string if none |
+| `pv` | boolean | Whether to return PV count |
+| `uv` | boolean | Whether to return UV count |
+
+**Response Body:**
+
+```json
+{
+  "ret": "OK",
+  "data": {
+    "pv": 42,
+    "uv": 15
+  }
+}
+```
+
+On error:
+
+```json
+{
+  "ret": "ERROR",
+  "data": null,
+  "message": "Error description"
+}
+```
+
+---
+
+## Configuration Reference
+
+### Logging (observability)
+
+```jsonc
+"observability": {
+  "logs": {
+    "enabled": true,       // Enable logging
+    "persist": true,       // Persist logs across Worker restarts
+    "invocation_logs": true // Capture console.log/error output
+  }
+}
+```
+
+### Static Assets
+
+```jsonc
+"assets": {
+  "directory": "./front/dist"  // Files auto-mapped to Worker root path
+}
+```
+
+### Database Migration
+
+```bash
+# Execute remotely
+npm run initSql
+
+# Execute on local D1 for development
+npm run initSqlLocal
 ```
